@@ -10,13 +10,13 @@
 #define dspsys_xcode_dev_json_h
 
 #include <stdint.h>
-#include "channel.h"
-#include "hashmap.h"
-#include "http_api.h"
+#include "../dspsys_lib_channel/channel.h"
+#include "../hashmap/hashmap.h"
+#include "../../http_api.h"
 #include <stdlib.h>
 #include "string.h"
-#include "matrix.h"
-#include "global.h"
+#include "../dspsys_lib_channel/matrix.h"
+#include "../../global.h"
 
 typedef struct Json {
     char string[3][256];

@@ -32,8 +32,6 @@
 </option>
 <option id="com.ti.ccstudio.buildDefinitions.TMS470_4.6.compilerID.INCLUDE_PATH.207692930" superClass="com.ti.ccstudio.buildDefinitions.TMS470_4.6.compilerID.INCLUDE_PATH" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${CG_TOOL_ROOT}/include&quot;"/>
-<listOptionValue builtIn="false" value="&quot;C:\Users\doulos\Documents\workspace\dspsys_xcode_dev&quot;"/>
-<listOptionValue builtIn="false" value="&quot;C:\Users\doulos\Documents\workspace\dspsys_lib_channel&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${SW_ROOT}/boards/ek-lm3s8962/enet_lwip&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${SW_ROOT}/boards/ek-lm3s8962&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${SW_ROOT}&quot;"/>
@@ -62,7 +60,9 @@
 <listOptionValue builtIn="false" value="&quot;${CG_TOOL_ROOT}/include&quot;"/>
 </option>
 </tool>
-<macros expandEnvironmentMacros="true"/>
+<macros expandEnvironmentMacros="true">
+<stringMacro name="SW_ROOT" type="VALUE_TEXT" value="C:/StellarisWare"/>
+</macros>
 </toolChain>
 <resourceConfiguration exclude="true" id="com.ti.ccstudio.buildDefinitions.TMS470.Debug.191972456./dspsys_stellaris/lib/dspsys_lib_channel/README" name="README" rcbsApplicability="disable" resourcePath="/dspsys_stellaris/lib/dspsys_lib_channel/README" toolsToInvoke=""/>
 </configuration>

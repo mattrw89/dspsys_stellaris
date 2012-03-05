@@ -37,16 +37,16 @@
 #include "utils/uartstdio.h"
 #include "utils/ustdlib.h"
 #include "httpserver_raw/httpd.h"
-#include "httpd.h"
+#include "third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h"
 #include "drivers/rit128x96x4.h"
 //added by matt webb
 #include "io.h"
 #include "cgifuncs.h"
-#include "hashmap.h"
-#include "json.h"
+#include "lib/hashmap/hashmap.h"
+#include "lib/json/json.h"
 #include "global.h"
-#include "channel.h"
-#include "common.h"
+#include "lib/dspsys_lib_channel/channel.h"
+#include "lib/dspsys_lib_channel/common.h"
 #include <cfloat>
 
 

@@ -39,10 +39,10 @@
 #include "drivers/rit128x96x4.h"
 #include "io.h"
 
-#include "channel.h"
+#include "lib/dspsys_lib_channel/channel.h"
 #include "global.h"
-#include "hashmap.h"
-#include "json.h"
+#include "lib/hashmap/hashmap.h"
+#include "lib/json/json.h"
 #include "http_api.h"
 
 
