@@ -37,7 +37,7 @@
 #include "utils/uartstdio.h"
 #include "utils/ustdlib.h"
 #include "httpserver_raw/httpd.h"
-#include "third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h"
+//#include "third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h"
 #include "drivers/rit128x96x4.h"
 //added by matt webb
 #include "io.h"

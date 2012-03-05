@@ -65,5 +65,15 @@
 			<type>1</type>
 			<location>C:/StellarisWare/boards/ek-lm3s8962/enet_lwip/startup_ccs.c</location>
 		</link>
+		<link>
+			<name>third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h</name>
+			<type>1</type>
+			<location>C:/StellarisWare/third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h</location>
+		</link>
+		<link>
+			<name>drivers/rit128x96x4.h</name>
+			<type>1</type>
+			<location>C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.h</location>
+		</link>
 	</linkedResources>
 </projectDescription>
