@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configurations XML_version="1.2" id="configurations_0">
+<instance XML_version="1.2" desc="Cortex-M3 Device Cycle Accurate Simulator, Little Endian" href="configurations\tisim_cortexm3le.xml" id="Cortex-M3 Device Cycle Accurate Simulator, Little Endian" xml="tisim_cortexm3le.xml" xmlpath="configurations"/>
+    <configuration XML_version="1.2" description="Simulates the Cortex-M3 core, Memory protection unit, instruction, data &amp; system bus memory interfaces in a cycle accurate manner. Supports systick timer &amp; a flat memory system.No other peripherals are modeled. &#10; This configuration is cycle accurate and hence suitable for algorithms development &amp; benchmarking. &#10; Note on other configurations available for this processor: &#10; * There is a corresponding faster simulator configuration, the functional simulator, that can be used for algorithms development, but doesn't support cycle accuracy. You can change this &quot;Cycle Accurate&quot; configuration to &quot;Functional&quot; by clicking on the &quot;Advanced&quot; button and modifying the &quot;Simulator Type&quot; to &quot;Functional&quot; in the CPU properties. &#10; " id="Cortex-M3 Device Cycle Accurate Simulator, Little Endian">
+        <connection XML_version="1.2" desc="Cortex-M3 Device Cycle Accurate Simulator, Little Endian_0" id="Cortex-M3 Device Cycle Accurate Simulator, Little Endian"/>
+    </configuration>
+</configurations>
