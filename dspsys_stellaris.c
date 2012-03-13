@@ -27,6 +27,7 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_nvic.h"
 #include "inc/hw_types.h"
+#include "inc/hw_sysctl.h"
 #include "driverlib/ethernet.h"
 #include "driverlib/flash.h"
 #include "driverlib/gpio.h"
@@ -570,11 +571,22 @@ main(void)
     unsigned long ulUser0, ulUser1;
     unsigned char pucMACArray[8];
 
+	if(REVISION_IS_A2)
+    {
+        SysCtlLDOSet(SYSCTL_LDO_2_75V);
+    }
+
+    //
+    // Set the clocking to run directly from the PLL at 50MHz.
+    //
+    SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
+                   SYSCTL_XTAL_8MHZ);
+
     //
     // Set the clocking to run directly from the crystal.
     //
-    SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-                   SYSCTL_XTAL_8MHZ);
+    //SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
+    //               SYSCTL_XTAL_8MHZ);
 
     //
     // Initialize the UART for debug output.
@@ -733,7 +745,7 @@ main(void)
 	delaymycode(30);
 	push_encoder_button();
 		
-	int testnumber = 2;
+	int testnumber = 3;
 		
 	while(true){
 		switch(testnumber){
@@ -763,6 +775,25 @@ main(void)
 				}
 			break;
 			}	
+			
+			case 3: {
+				delaymycode(30);
+				turn_encoder_right();
+			
+				delaymycode(30);
+				push_encoder_button();
+				
+				uint8_t x = 10;
+				while(x > 0){
+					delaymycode(30);
+					turn_encoder_right();
+					x--;
+				}
+				while(1) {
+					delaymycode(30);
+					turn_encoder_left();
+				}
+			}
 		}
 	}
 }

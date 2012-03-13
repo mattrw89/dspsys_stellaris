@@ -256,7 +256,7 @@ fs_open(char *name)
         //
         // Ensure that the file system access to the SSI port is active.
         //
-        fs_enable(4000000);
+        fs_enable(10000000);
 
         //
         // Allocate memory for the Fat File system handle.

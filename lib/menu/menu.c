@@ -127,13 +127,13 @@ void s1_left(Display *disp, Menu_enum menu_type, uint16_t value){
 	disp->right = oldcurrent;
 	
 	
-	switch(menu_type && 0xF0) {
+	switch((menu_type >> 4)) {
 		
-		case(0x00):
+		case(0):
 			display_ctor(oldcurrent->left, menu_type, disp, NULL, oldselect, oldback,NULL);
 			break;
 	
-		case(0x10):
+		case(1):
 			if(menu_type > 0x10){
 				disp->menu_type = --menu_type;
 			} 
@@ -150,11 +150,27 @@ void s1_left(Display *disp, Menu_enum menu_type, uint16_t value){
 			display_ctor(oldcurrent->right, menu_type, NULL, disp, oldselect, oldback,NULL);
 			break;
 		
-		case(0x20):
-		
+		case(2): //determines which stage 2 menu is in
+			switch((int)(menu_type && 0x0F)){
+				//channel display stage 2
+				case 0:
+					break;
+				//channel select stage 2
+				case 1: {
+					uint16_t temp;
+					
+					if(disp->i >= 2) {	//checks for end of channel list
+						temp = (disp->i) - 1;
+					} else temp = NUM_OUTPUT_CHANNELS;		//wraps channel list
+					
+					display_ctor(oldright,menu_type,NULL,disp,oldselect,oldback,temp);  //constructs the next left
+					break;
+				}
+			}
 			break;
+			
 		
-		case(0x30):
+		case(3):
 			
 			break;
 	}
@@ -163,8 +179,10 @@ void s1_left(Display *disp, Menu_enum menu_type, uint16_t value){
 	Cursor_enum temp1 = SEC_1;
 	screen_set_cursor(temp1);
 	screen_write_txt(&(disp->characters[0][0]), strlen(disp->characters[0]));
-	global_current_display(disp);
-	
+	if((disp->menu_type >> 4)> 1)	//writes second line of characters to screen
+		screen_write_txt_line_2(&(disp->characters[1][0]),strlen(disp->characters[1]));
+		
+	global_current_display(disp);	//updates current screen object	
 
 }
 
