@@ -266,28 +266,35 @@ uint8_t extract_query_params(char* string, uint8_t* length, KeyValueMap* map) {
 float get_value_from_string(char* string, uint8_t* length, uint8_t offset) {
     advance_string(string, length, offset+1);
     
+    float mult = 1;
+    float temp_value = 0.0;
+    uint8_t dec_flag = 0;
+    uint8_t neg_flag = 0;
+    
+    if (string[0] == '-') {
+    	advance_string(string,length, 1);
+    	neg_flag = 1;
+    }
+    
     uint8_t num_digits_front_decimal = strcspn(string, "./&");
     uint8_t j = num_digits_front_decimal-1;
-    float mult = 1;
-    float temp_value;
-    uint8_t dec_flag = 0;
     
     if (string[num_digits_front_decimal] == '.') {
         dec_flag = 1;
-        
     }
     
     //create a multiplier according to the number of digits left of the decimal
+    mult = 1;
     while( j > 0) {
         mult *= 10;
         j--;
     }
+    
     //loop through the digits in front of the decimal
-    uint8_t k=0;
-    for ( k = num_digits_front_decimal; k > 0; k--) {
+    for ( j = num_digits_front_decimal; j > 0; j--) {
         //if it's a number then add it's integer value to temp_value multiplied by the multiplier
         if( (string[0] <= '9') && (string[0] >= '0') ) {
-            temp_value += (string[0] - '0') * mult;
+            temp_value += ((string[0] - '0') * mult);
         }
         mult /= 10; // shift 
         advance_string(string, length, 1);
@@ -297,49 +304,65 @@ float get_value_from_string(char* string, uint8_t* length, uint8_t offset) {
     if(dec_flag) {
         advance_string(string, length, 1);
         uint8_t num_digits_post_decimal = strcspn(string, "/&");
-        uint8_t w=0;
-        for ( w = num_digits_post_decimal; w >0; w--) {
+
+        for ( j = num_digits_post_decimal; j > 0; j--) {
             temp_value += (string[0] -'0') * mult;
             mult /= 10;
             advance_string(string, length, 1);
         }
     }
+    
+    if(neg_flag) {
+    	temp_value *= -1; // make it negative!
+    }
+    
     return temp_value;
 }
 
 void get_string_from_float(float value, char* string) {
-    float value1 = value;
+    //float value1 = value;
     uint8_t temp;
     float divider = 10000;
     uint8_t start = 0;
-    uint8_t start_post_decimal = 0;
     uint8_t decimal_placed = 0;
     char* chr_ptr = string;
     uint8_t i=0;
-    for ( i=0; i<9; i++) {
+    
+    //if it's negative then add a negative sign
+    if ( value < 0 ) {
+    	*chr_ptr = '-';
+    	chr_ptr += sizeof(char);
+    	value *= -1;
+    }
+    
+    for ( i=0; i<7; i++) {
         
-        temp = value1/divider;
+        temp = value/divider;
         if(temp > 0 && start == 0) {
             start = 1;
         }
         
-        if(start && !start_post_decimal) {
+        if( start || decimal_placed || i == 4 ) {
             *chr_ptr = temp + '0';
-            value1 -= temp*divider;
+            value -= temp*divider;
             chr_ptr += sizeof(char);
         }
         divider /= 10;
         
-        if(divider < 1 && !decimal_placed && start) {
+        //printf("divider:  %f, i = %d\n", divider, i);
+        //printf("decimal_placed: %d, value: %f", decimal_placed, value);
+        if( i > 3 && !decimal_placed ) {
             *chr_ptr = '.';
             decimal_placed = 1;
             chr_ptr += sizeof(char);
         }
     }
+    
     if (chr_ptr == string) {
         *chr_ptr = '0';
         chr_ptr += sizeof(char);
     }
+    
     *chr_ptr = '\0';
 }
 

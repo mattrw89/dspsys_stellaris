@@ -61,11 +61,6 @@
 			<location>C:/StellarisWare/third_party/lwip-1.3.2/apps/httpserver_raw/httpd.c</location>
 		</link>
 		<link>
-			<name>startup_ccs.c</name>
-			<type>1</type>
-			<location>C:/StellarisWare/boards/ek-lm3s8962/enet_lwip/startup_ccs.c</location>
-		</link>
-		<link>
 			<name>third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h</name>
 			<type>1</type>
 			<location>C:/StellarisWare/third_party/lwip-1.3.2/apps/httpserver_raw/httpd.h</location>

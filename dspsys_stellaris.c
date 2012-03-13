@@ -1,4 +1,4 @@
-//*****************************************************************************
+	//*****************************************************************************
 //
 // enet_lwip.c - Sample WebServer Application using lwIP.
 //
@@ -47,6 +47,12 @@
 #include "lib/dspsys_lib_channel/channel.h"
 #include "lib/dspsys_lib_channel/common.h"
 #include <cfloat>
+
+
+#include "lib/menu/menu.h"
+#include "lib/i2c/lib_I2C.h"
+#include "lib/lib_newhaven_screen/screen.h"
+#include "ints.h"
 
 
 //*****************************************************************************
@@ -510,6 +516,52 @@ void channels_init() {
 	}
 }
 
+void menu_init(Display *one, Display *two, Display *three, Display *four, Display *five){
+	
+	two->menu_type = HOME;
+	
+	two->left = one;
+	two->right = three;
+	two->select = five;
+	two->back = four;
+	
+	one->i = 0;
+	two->i = 0;
+	three->i = 0;
+	four->i = 0;
+	five->i = 0;
+	
+	one->func_right = &s1_right;
+	two->func_right = &s1_right;
+	three->func_right = &s1_right;
+	four->func_right = &s1_right;
+	five->func_right = &s1_right;
+	
+	one->func_left = &s1_left;
+	two->func_left = &s1_left;
+	three->func_left = &s1_left;
+	four->func_left = &s1_left;
+	five->func_left = &s1_left;
+	
+	one->func_select = &s1_select;
+	two->func_select = &s1_select;
+	three->func_select = &s1_select;
+	four->func_select = &s1_select;
+	five->func_select = &s1_select;
+	
+	one->func_back = &s1_back;
+	two->func_back = &s1_back;
+	three->func_back = &s1_back;
+	four->func_back = &s1_back;
+	five->func_back = &s1_back;
+	
+	display_set_text(five, CHANNEL_DISPLAY_TEXT, 16);
+	
+	display_set_text(two, HOME_TEXT, 16);
+	display_set_text(three, HOME_TEXT, 16);
+	display_set_text(one,HOME_TEXT,16);
+	display_set_text(four,HOME_TEXT,16);
+}
 
 int
 main(void)
@@ -662,10 +714,57 @@ main(void)
     //
     
 	channels_init();
+    I2CInit();
+	screen_on();
+	screen_clear();
+	
+	Display* one = global_get_display(0);
+	Display* two = global_get_display(1);
+	Display* three = global_get_display(2);
+	Display* four = global_get_display(3);
+	Display* five = global_get_display(4);	
+	
+	global_current_display(two);
+	
+	menu_init(one,two,three,four,five);
     
-    while(1)
-    {
-    }
+	screen_write_txt(&(two->characters[0][0]),strlen(two->characters[0]));
+	
+	delaymycode(30);
+	push_encoder_button();
+		
+	int testnumber = 2;
+		
+	while(true){
+		switch(testnumber){
+			case 1: {
+		
+			delaymycode(30);
+			turn_encoder_right();
+			
+			delaymycode(30);
+			turn_encoder_right();
+		
+			delaymycode(30);
+			turn_encoder_right();
+			break;
+			}
+			
+			case 2:{
+				
+			delaymycode(30);
+			turn_encoder_right();
+			
+			delaymycode(30);
+			push_encoder_button();
+			while(1){
+				delaymycode(30);
+				turn_encoder_right();
+				}
+			break;
+			}	
+		}
+	}
 }
 
 

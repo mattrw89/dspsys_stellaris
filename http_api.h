@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <cfloat>
 #include "lib/hashmap/hashmap.h"
 #include "lib/dspsys_lib_channel/common.h"
 #include <stdlib.h>
