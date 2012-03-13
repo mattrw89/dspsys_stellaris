@@ -11,15 +11,16 @@
 
 #include <string.h>
 #include <stdint.h>
+<<<<<<< HEAD
 #include <cfloat>
+=======
+#include <stdlib.h>
+>>>>>>> f33da1ed9597db23bdb422b8e49957747c032150
 #include "lib/hashmap/hashmap.h"
 #include "lib/dspsys_lib_channel/common.h"
-#include <stdlib.h>
 #include "global.h"
 #include "lib/json/json.h"
 #include "lib/dspsys_lib_channel/channel.h"
-//#include "eq.h"
-//#include "comp.h"
 
 ////////////HTTP API INFO STRUCTURE & METHODS///////////////
 typedef struct HttpApiInfo {

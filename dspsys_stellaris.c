@@ -22,6 +22,7 @@
 //
 //*****************************************************************************
 #include <string.h>
+#include <cfloat>
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_nvic.h"
@@ -46,7 +47,6 @@
 #include "global.h"
 #include "lib/dspsys_lib_channel/channel.h"
 #include "lib/dspsys_lib_channel/common.h"
-#include <cfloat>
 
 
 #include "lib/menu/menu.h"

@@ -39,7 +39,6 @@ uint8_t http_api_info_set_chan_num(HttpApiInfo* info, uint8_t cnum) {
 
 
 uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
-    printf("value: %d\n",strncmp(first_char,"/a/",3));
     char temp[80];
     Json* json = (Json*) jsonvoid;
     uint8_t temp_len = length;
@@ -125,8 +124,34 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                     	
                     json_encode_ok(json);
                     return 1;
-                } else if (!strncmp(temp,"rename",6)) {
+                } else if (!strncmp(temp,"rename?name=",12)) {
                     printf("rename channel!!!");
+                    advance_string(temp, &temp_len, 12);
+                	printf("\nname: %s\n", temp);
+                	
+                	char ts[20];
+                	strcpy(ts, temp);
+                	
+                	//allow A-Z, a-z, 0-9, -, _
+                	//convert + to space
+                	uint8_t j = 0;
+                	uint8_t good_length = 0;
+                	for(j=0; j < strlen(ts); j++) {
+                		if ( ( (ts[j] <= 0x39) && (ts[j] >= 0x30) ) || 
+                			 ( (ts[j] <= 0x5A) && (ts[j] >= 0x41) ) ||
+                			 ( (ts[j] <= 0x7A) && (ts[j] >= 0x61) ) ||
+                			 (ts[j] == 0x20) || (ts[j] == 0x5F) ||
+                			 (ts[j] == 0x2D) || (ts[j] == 0x2B)
+                			) {
+                				if ( ts[j] == 0x2B ) ts[j] = 0x20;
+                				good_length++;
+                		} else break;
+                	}
+                	                    
+                    channel_set_name(tempchan, ts);
+                    json_encode_ok(json);
+                    return 1;
+                    
                 } else {
                     //ERROR
                     printf("ERROR: not eqparams, compparams, or rename\n");
@@ -183,7 +208,7 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
             return 0;
         }
     } else {
-        printf("we don't have a web API command\n");
+        //printf("we don't have a web API command\n");
         return 0;
         //we don't have an API command... send it to the filesystem
     }
