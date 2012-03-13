@@ -11,11 +11,8 @@
 
 #include <string.h>
 #include <stdint.h>
-<<<<<<< HEAD
 #include <cfloat>
-=======
 #include <stdlib.h>
->>>>>>> f33da1ed9597db23bdb422b8e49957747c032150
 #include "lib/hashmap/hashmap.h"
 #include "lib/dspsys_lib_channel/common.h"
 #include "global.h"

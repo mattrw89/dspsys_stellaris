@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launchConfiguration type="com.ti.ccstudio.debug.core.CCELaunchType">
-<booleanAttribute key="com.ti.ccstudio.debug.core.MRU_PROGRAM_S_ONLY" value="false"/>
 <booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+<booleanAttribute key="com.ti.ccstudio.debug.core.MRU_PROGRAM_S_ONLY" value="false"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_ID" value="com.ti.ccstudio.debug.core.CCEDebugger"/>
 <stringAttribute key="CCEDebugOptions.CPU_RESOLVE_OPTION" value="always_ask"/>
 <stringAttribute key="org.eclipse.debug.ui.DISPLAY_NAME" value="dspsys_stellaris [Debug] - Stellaris In-Circuit Debug Interface_0/CORTEX_M3_0"/>
-<stringAttribute key="CCEDebugOptions.LOADING_OPTION" value="program"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_REGISTER_GROUPS" value=""/>
+<stringAttribute key="CCEDebugOptions.LOADING_OPTION" value="program"/>
 <mapAttribute key="com.ti.ccstudio.debug.core.VARIABLE_STATE"/>
-<stringAttribute key="CCEDebugOptions.DEBUG_PROPERTIES.Stellaris In-Circuit Debug Interface_0/CORTEX_M3_0" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot; ?&gt;&#10;&lt;PropertyValues&gt;&#10;&#10;  &lt;property id=&quot;ConnectOnStartup&quot;&gt;&#10;    &lt;curValue&gt;1&lt;/curValue&gt;&#10;  &lt;/property&gt;&#10;&#10;&lt;/PropertyValues&gt;&#10;"/>
 <mapAttribute key="com.ti.ccstudio.memory.ui.displayFormats">
 <mapEntry key="Stellaris In-Circuit Debug Interface_0/CORTEX_M3_0@##separator##@0" value="CHARACTER"/>
 </mapAttribute>
+<stringAttribute key="CCEDebugOptions.DEBUG_PROPERTIES.Stellaris In-Circuit Debug Interface_0/CORTEX_M3_0" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot; ?&gt;&#10;&lt;PropertyValues&gt;&#10;&#10;  &lt;property id=&quot;ConnectOnStartup&quot;&gt;&#10;    &lt;curValue&gt;1&lt;/curValue&gt;&#10;  &lt;/property&gt;&#10;&#10;&lt;/PropertyValues&gt;&#10;"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="run"/>
 <stringAttribute key="com.ti.ccstudio.debug.core.DISPLAY_NAME_FORMAT" value="dspsys_stellaris [Debug] - {0}"/>
 <stringAttribute key="CCEDebugOptions.TARGET_CONFIGURATION_OPTION" value="full"/>
 <stringAttribute key="org.eclipse.cdt.launch.MEMORY_BLOCKS" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&lt;memoryBlockExpressionList/&gt;&#13;&#10;"/>
-<stringAttribute key="com.ti.ccstudio.debug.core.MRU_PROGRAM_NAME" value="C:\Users\doulos\Documents\workspace\dspsys_stellaris\Debug\dspsys_stellaris.out"/>
-<stringAttribute key="com.ti.ccstudio.debug.core.MRU_MODULES" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&lt;modules&gt;&#13;&#10;&lt;module name=&quot;C:\Users\doulos\Documents\My Dropbox\Documents\School\11 Fall\Senior Design\Programming\gitrepos\matt working\dspsys_stellaris\Debug\dspsys_stellaris.out&quot; time=&quot;Wed Feb 29 16:58:38 EST 2012&quot; time_long=&quot;1330552718725&quot;/&gt;&#13;&#10;&lt;module name=&quot;C:\Users\doulos\Documents\workspace\dspsys_stellaris\Debug\dspsys_stellaris.out&quot; time=&quot;Mon Mar 05 21:17:56 EST 2012&quot; time_long=&quot;1331000276414&quot;/&gt;&#13;&#10;&lt;/modules&gt;&#13;&#10;"/>
+<stringAttribute key="com.ti.ccstudio.debug.core.MRU_PROGRAM_NAME" value="C:\Users\doulos\Documents\My Dropbox\Documents\School\11 Fall\Senior Design\Programming\gitrepos\matt working\dspsys_stellaris\Debug\dspsys_stellaris.out"/>
+<stringAttribute key="com.ti.ccstudio.debug.core.MRU_MODULES" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&lt;modules&gt;&#13;&#10;&lt;module name=&quot;C:\Users\doulos\Documents\workspace\dspsys_stellaris\Debug\dspsys_stellaris.out&quot; time=&quot;Mon Mar 05 21:17:56 EST 2012&quot; time_long=&quot;1331000276414&quot;/&gt;&#13;&#10;&lt;module name=&quot;C:\Users\doulos\Documents\My Dropbox\Documents\School\11 Fall\Senior Design\Programming\gitrepos\matt working\dspsys_stellaris\Debug\dspsys_stellaris.out&quot; time=&quot;Mon Mar 12 23:01:03 EDT 2012&quot; time_long=&quot;1331607663206&quot;/&gt;&#13;&#10;&lt;/modules&gt;&#13;&#10;"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="dspsys_stellaris"/>
 <stringAttribute key="CCEDebugOptions.CPU_NAME" value="Stellaris In-Circuit Debug Interface_0/CORTEX_M3_0"/>
 <stringAttribute key="org.eclipse.cdt.launch.GLOBAL_VARIABLES" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#13;&#10;&lt;globalVariableList/&gt;&#13;&#10;"/>
