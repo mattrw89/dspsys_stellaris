@@ -51,15 +51,15 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
     if(!strncmp(temp, "/a/", 3)) {
         //ok, we have an api command
         advance_string(temp, &temp_len, 3);
-        printf("we have a web API command: leftover %s\n", temp);
+        //!printf("we have a web API command: leftover %s\n", temp);
         
         if( ((temp[0] == 'o') || (temp[0] == 'i')) && (temp[1] == '/') ) {
             //we have an input or an output being specified
-            printf("input/output status: %c\n", temp[0]);
+            //!printf("input/output status: %c\n", temp[0]);
             http_api_info_set_io(&api_info, ( (temp[0] == 'i') ? INPUT : OUTPUT ));
             
             advance_string(temp, &temp_len, 2);
-            printf("%s\n",temp);
+            //!printf("%s\n",temp);
             //now we need to find the channel number
             uint8_t testnum = get_channel_number(temp,&temp_len);
             Io_enum io = (Io_enum) http_api_info_get_io(&api_info);
@@ -72,7 +72,7 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                 
                 if (!strncmp(temp, "eqparams", 7)) {
                 	json_encode_eq(tempchan, json);
-                    printf("eqparams!!\n");
+                    //!printf("eqparams!!\n");
                     return 1;
                 } else if(!strncmp(temp,"modeq",5)) {
                 	advance_string(temp, &temp_len, 5);
@@ -85,13 +85,21 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                     float eq_enable = map_get_value_by_key(http_api_info_get_params(&api_info),"e");
                     
                     if( (band_num >= 1) && (band_num <= 4 ) ) {
-                    	EqBand* temp_eq_band = channel_get_eqband(tempchan, (uint8_t) band_num);
+                    	//EqBand* temp_eq_band = channel_get_eqband(tempchan, (uint8_t) band_num);
                     	
-                    	eqband_set_type(temp_eq_band, (Eq_type_enum)(eq_type));
-                    	eqband_set_bw(temp_eq_band, eq_q);
-                    	eqband_set_freq(temp_eq_band, eq_freq);
-                    	eqband_set_gain(temp_eq_band, eq_gain);
-                    	( (uint8_t)eq_enable == ENABLED) ? eqband_enable(temp_eq_band) : eqband_disable(temp_eq_band);
+                    	//eqband_set_type(temp_eq_band, (Eq_type_enum)(eq_type));
+                    	//eqband_set_bw(temp_eq_band, eq_q);
+                    	//eqband_set_freq(temp_eq_band, eq_freq);
+                    	//eqband_set_gain(temp_eq_band, eq_gain);
+                    	//( (uint8_t)eq_enable == ENABLED) ? eqband_enable(temp_eq_band) : eqband_disable(temp_eq_band);
+                    	
+                    	Api_set_eqband_type(tempchan, (uint8_t) band_num, (Eq_type_enum)(eq_type));
+                    	Api_set_eqband_bw(tempchan, (uint8_t) band_num, eq_q);
+                    	Api_set_eqband_freq(tempchan, (uint8_t)band_num, eq_freq);
+                    	Api_set_eqband_gain(tempchan, (uint8_t)band_num, eq_gain);
+                    	( (uint8_t)eq_enable == ENABLED) ? Api_enable_eqband(tempchan, (uint8_t)band_num) : Api_disable_eqband(tempchan, (uint8_t)band_num);
+                    	
+                    	
                     	
                     	json_encode_ok(json);
                     	return 1;
@@ -100,10 +108,10 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                 	
                 } else if (!strncmp(temp, "compparams", 9)) {
                 	json_encode_comp(tempchan, json);
-                    printf("compparams!!\n");
+                    //!printf("compparams!!\n");
                     return 1;
                 } else if (!strncmp(temp,"modcomp",7)) {
-                	printf("modcomp!\n");
+                	//!printf("modcomp!\n");
                 	advance_string(temp, &temp_len, 7);
                 	
                     extract_query_params(temp, &temp_len, http_api_info_get_params(&api_info));
@@ -125,9 +133,9 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                     json_encode_ok(json);
                     return 1;
                 } else if (!strncmp(temp,"rename?name=",12)) {
-                    printf("rename channel!!!");
+                    //!printf("rename channel!!!");
                     advance_string(temp, &temp_len, 12);
-                	printf("\nname: %s\n", temp);
+                	//!printf("\nname: %s\n", temp);
                 	
                 	char ts[20];
                 	strcpy(ts, temp);
@@ -154,7 +162,7 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                     
                 } else {
                     //ERROR
-                    printf("ERROR: not eqparams, compparams, or rename\n");
+                    //!printf("ERROR: not eqparams, compparams, or rename\n");
                 }
                 
             } else if (!strncmp(temp, "chanlist", 8)) {
@@ -169,29 +177,29 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
                 
             } else {
                 //ERROR
-                printf("ERROR: what error is this?\n");
+                //!printf("ERROR: what error is this?\n");
             }
             
         } else if (temp[0] == 's') {
-            printf("we are requesting a status\n");
+            //!printf("we are requesting a status\n");
             advance_string(temp, &temp_len, 2);
             if(!strncmp(temp,"bob",3)) {
-                printf("return the bob status info\n");
+                //!printf("return the bob status info\n");
             } else if(!strncmp(temp,"clip",4)) {
-                printf("return clip information\n");
+                //!printf("return clip information\n");
             } else {
-                printf("no matching status api command\n");
+                //!printf("no matching status api command\n");
             }
             
             
         } else if(temp[0] == 'm' && temp[1] == '/') {
             advance_string(temp, &temp_len, 2);
-            printf("we are requesting routing matrix\n");
+            //!printf("we are requesting routing matrix\n");
             if ( (http_api_info_set_chan_num(&api_info, get_channel_number(temp, &temp_len))) > 0) {
-                printf("matrix output chan number: %d \n", http_api_info_get_chan_num(&api_info));
+                //!printf("matrix output chan number: %d \n", http_api_info_get_chan_num(&api_info));
                 
                 if(!strncmp(temp, "modroute", 8)) {
-                    printf("now we're modifying a route\n");
+                    //!printf("now we're modifying a route\n");
                     advance_string(temp, &temp_len, 8);
                     extract_query_params(temp, &temp_len, http_api_info_get_params(&api_info));
                     map_get_value_by_key(http_api_info_get_params(&api_info),"i");
@@ -204,7 +212,7 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
             
         } else {
             //ERROR
-            printf("ERROR: incorrect api command identifier\n");
+            //!printf("ERROR: incorrect api command identifier\n");
             return 0;
         }
     } else {
@@ -212,7 +220,7 @@ uint8_t http_process_url(char* first_char, uint8_t length, void* jsonvoid) {
         return 0;
         //we don't have an API command... send it to the filesystem
     }
-    printf("channel number: %d\n\n\n", http_api_info_get_chan_num(&api_info));
+    //!printf("channel number: %d\n\n\n", http_api_info_get_chan_num(&api_info));
     return 0;
 }
 
@@ -244,15 +252,15 @@ uint8_t get_channel_number(char* string, uint8_t* length ) {
             
             if( chan_num > 16 ) {
                 //ERROR
-                printf("ERROR: channel_number is larger than max number of channels\n");
+                //!printf("ERROR: channel_number is larger than max number of channels\n");
             }
         } else {
             //ERROR
-            printf("ERROR: wrong channel number format\n");
+            //!printf("ERROR: wrong channel number format\n");
         }
     } else {
         //ERROR
-        printf("not a number to start channel!");
+        //!printf("not a number to start channel!");
     }
     return chan_num;
 }

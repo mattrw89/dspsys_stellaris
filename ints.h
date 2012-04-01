@@ -1,6 +1,7 @@
 #ifndef INTS_H_
 #define INTS_H_
 
+#include <stdio.h>
 #include "global.h"
 #include "lib/menu/menu.h"
 

@@ -1,26 +1,3 @@
-	//*****************************************************************************
-//
-// enet_lwip.c - Sample WebServer Application using lwIP.
-//
-// Copyright (c) 2007-2011 Texas Instruments Incorporated.  All rights reserved.
-// Software License Agreement
-// 
-// Texas Instruments (TI) is supplying this software for use solely and
-// exclusively on TI's microcontroller products. The software is owned by
-// TI and/or its suppliers, and is protected under applicable copyright
-// laws. You may not combine this software with "viral" open-source
-// software in order to form a larger program.
-// 
-// THIS SOFTWARE IS PROVIDED "AS IS" AND WITH ALL FAULTS.
-// NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT
-// NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. TI SHALL NOT, UNDER ANY
-// CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
-// DAMAGES, FOR ANY REASON WHATSOEVER.
-// 
-// This is part of revision 7611 of the EK-LM3S8962 Firmware Package.
-//
-//*****************************************************************************
 #include <string.h>
 #include <cfloat>
 #include "inc/hw_ints.h"
@@ -34,48 +11,33 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/systick.h"
+#include "driverlib/timer.h"
+#include "driverlib/uart.h"
 #include "utils/locator.h"
 #include "utils/lwiplib.h"
 #include "utils/uartstdio.h"
 #include "utils/ustdlib.h"
 #include "httpserver_raw/httpd.h"
-#include "drivers/rit128x96x4.h"
-//added by matt webb
-#include "io.h"
-#include "cgifuncs.h"
+#include "driverlib/qei.h"
 #include "lib/hashmap/hashmap.h"
 #include "lib/json/json.h"
 #include "global.h"
 #include "lib/dspsys_lib_channel/channel.h"
 #include "lib/dspsys_lib_channel/common.h"
-
-
 #include "lib/menu/menu.h"
 #include "lib/i2c/lib_I2C.h"
 #include "lib/lib_newhaven_screen/screen.h"
 #include "ints.h"
+#include "lib/dspsys_lib_txrxspi/ApiCommand.h"
+#include "lib/dspsys_lib_txrxspi/ApiHandler.h"
+#include "lib/lib_codec_cs42448/codec.h"
+#include "lib/circbuff/circbuff.h"
+#include "lib/uart/uart.h"
 
+//define the UART port that I'm using 
+#define UART_PORT UART0_BASE
+#define UART_INT INT_UART0
 
-//*****************************************************************************
-//
-//! \addtogroup example_list
-//! <h1>Ethernet with lwIP (enet_lwip)</h1>
-//!
-//! This example application demonstrates the operation of the Stellaris
-//! Ethernet controller using the lwIP TCP/IP Stack.  DHCP is used to obtain
-//! an Ethernet address.  If DHCP times out without obtaining an address,
-//! AUTOIP will be used to obtain a link-local address.  The address that is
-//! selected will be shown on the OLED display.
-//!
-//! The file system code will first check to see if an SD card has been plugged
-//! into the microSD slot.  If so, all file requests from the web server will
-//! be directed to the SD card.  Otherwise, a default set of pages served up
-//! by an internal file system will be used.
-//!
-//! For additional details on lwIP, refer to the lwIP web page at:
-//! http://savannah.nongnu.org/projects/lwip/
-//
-//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -117,272 +79,6 @@ __error__(char *pcFilename, unsigned long ulLine)
 #endif
 
 
-//ADDED BY MATT WEBB TO INCLUDE CGI FUNCTIONALITY
-
-//*****************************************************************************
-//
-// SSI tag indices for each entry in the g_pcSSITags array.
-//
-//*****************************************************************************
-#define SSI_INDEX_JSON1   0
-#define SSI_INDEX_JSON2   1
-#define SSI_INDEX_JSON3   2
-#define SSI_INDEX_JSON4   3
-#define SSI_INDEX_JSON5   4
-
-//*****************************************************************************
-//
-// This array holds all the strings that are to be recognized as SSI tag
-// names by the HTTPD server.  The server will call SSIHandler to request a
-// replacement string whenever the pattern <!--#tagname--> (where tagname
-// appears in the following array) is found in ".ssi", ".shtml" or ".shtm"
-// files that it serves.
-//
-//*****************************************************************************
-static const char *g_pcConfigSSITags[] =
-{
-    "JSON1",        // SSI_INDEX_LEDSTATE
-    "JSON2",        // SSI_INDEX_PWMSTATE
-    "JSON3",        // SSI_INDEX_PWMFREQ
-    "JSON4",        // SSI_INDEX_PWMDUTY
-    "JSON5"         // SSI_INDEX_FORMVARS
-};
-
-//*****************************************************************************
-//
-//! The number of individual SSI tags that the HTTPD server can expect to
-//! find in our configuration pages.
-//
-//*****************************************************************************
-#define NUM_CONFIG_SSI_TAGS     (sizeof(g_pcConfigSSITags) / sizeof (char *))
-
-
-
-//*****************************************************************************
-//
-//! Prototypes for the various CGI handler functions.
-//
-//*****************************************************************************
-static char *ControlCGIHandler(int iIndex, int iNumParams, char *pcParam[],
-                              char *pcValue[]);
-static char *SetTextCGIHandler(int iIndex, int iNumParams, char *pcParam[],
-                              char *pcValue[]);
-
-//*****************************************************************************
-//
-// CGI URI indices for each entry in the g_psConfigCGIURIs array.
-//
-//*****************************************************************************
-#define CGI_INDEX_CONTROL       0
-#define CGI_INDEX_TEXT          1
-
-//*****************************************************************************
-//
-//! This array is passed to the HTTPD server to inform it of special URIs
-//! that are treated as common gateway interface (CGI) scripts.  Each URI name
-//! is defined along with a pointer to the function which is to be called to
-//! process it.
-//
-//*****************************************************************************
-static const tCGI g_psConfigCGIURIs[] =
-{
-    { "/iocontrol.cgi", ControlCGIHandler },      // CGI_INDEX_CONTROL
-    { "/settxt.cgi", SetTextCGIHandler }          // CGI_INDEX_TEXT
-};
-
-//*****************************************************************************
-//
-//! The number of individual CGI URIs that are configured for this system.
-//
-//*****************************************************************************
-#define NUM_CONFIG_CGI_URIS     (sizeof(g_psConfigCGIURIs) / sizeof(tCGI))
-
-//*****************************************************************************
-//
-//! The file sent back to the browser by default following completion of any
-//! of our CGI handlers.  Each individual handler returns the URI of the page
-//! to load in response to it being called.
-//
-//*****************************************************************************
-#define DEFAULT_CGI_RESPONSE    "/io_cgi.ssi"
-
-//*****************************************************************************
-//
-//! The file sent back to the browser in cases where a parameter error is
-//! detected by one of the CGI handlers.  This should only happen if someone
-//! tries to access the CGI directly via the broswer command line and doesn't
-//! enter all the required parameters alongside the URI.
-//
-//*****************************************************************************
-#define PARAM_ERROR_RESPONSE    "/perror.htm"
-
-#define JAVASCRIPT_HEADER                                                     \
-    "<script type='text/javascript' language='JavaScript'>\n"
-#define JAVASCRIPT_FOOTER                                                     \
-    "</script>\n"  
-
-
-//*****************************************************************************
-//
-// This CGI handler is called whenever the web browser requests iocontrol.cgi.
-//
-//*****************************************************************************
-static char *
-ControlCGIHandler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
-{
-    tBoolean bParamError;
-    long lLEDState, lPWMState, lPWMDutyCycle, lPWMFrequency;
-
-    //
-    // We have not encountered any parameter errors yet.
-    //
-    bParamError = false;
-
-    //
-    // Get each of the 4 expected parameters.
-    //
-    lLEDState = FindCGIParameter("LEDOn", pcParam, iNumParams);
-    lPWMState = FindCGIParameter("PWMOn", pcParam, iNumParams);
-    lPWMDutyCycle = GetCGIParam("PWMDutyCycle", pcParam, pcValue, iNumParams,
-                                &bParamError);
-    lPWMFrequency = GetCGIParam("PWMFrequency", pcParam, pcValue, iNumParams,
-                                &bParamError);
-
-    //
-    // Was there any error reported by the parameter parser?
-    //
-    if(bParamError || (lPWMDutyCycle < 0) || (lPWMDutyCycle > 100) ||
-       (lPWMFrequency < 200) || (lPWMFrequency > 20000))
-    {
-        return(PARAM_ERROR_RESPONSE);
-    }
-
-    //
-    // We got all the parameters and the values were within the expected ranges
-    // so go ahead and make the changes.
-    //
-    io_set_led((lLEDState == -1) ? false : true);
-    io_pwm_dutycycle((unsigned long)lPWMDutyCycle);
-    io_pwm_freq((unsigned long)lPWMFrequency);
-    io_set_pwm((lPWMState == -1) ? false : true);
-
-    //
-    // Send back the default response page.
-    //
-    return(DEFAULT_CGI_RESPONSE);
-}
-
-//*****************************************************************************
-//
-// This CGI handler is called whenever the web browser requests settxt.cgi.
-//
-//*****************************************************************************
-static char *
-SetTextCGIHandler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
-{
-    long lStringParam;
-    char pcDecodedString[24];
-
-    //
-    // Find the parameter that has the string we need to display.
-    //
-    lStringParam = FindCGIParameter("DispText", pcParam, iNumParams);
-
-    //
-    // If the parameter was not found, show the error page.
-    //
-    if(lStringParam == -1)
-    {
-        return(PARAM_ERROR_RESPONSE);
-    }
-
-    //
-    // The parameter is present. We need to decode the text for display.
-    //
-    DecodeFormString(pcValue[lStringParam], pcDecodedString, 24);
-
-    //
-    // Claim the SSI for communication with the display.
-    //
-    RIT128x96x4Enable(1000000);
-
-    //
-    // Erase the previous string and overwrite it with the new one.
-    //
-    RIT128x96x4StringDraw("                      ", 0, 64, 12);
-    RIT128x96x4StringDraw(pcDecodedString, 0, 64, 12);
-
-    //
-    // Release the SSI.
-    //
-    RIT128x96x4Disable();
-
-    //
-    // Tell the HTTPD server which file to send back to the client.
-    //
-    return(DEFAULT_CGI_RESPONSE);
-}
-
-//*****************************************************************************
-//
-// This function is called by the HTTP server whenever it encounters an SSI
-// tag in a web page.  The iIndex parameter provides the index of the tag in
-// the g_pcConfigSSITags array. This function writes the substitution text
-// into the pcInsert array, writing no more than iInsertLen characters.
-//
-//*****************************************************************************
-static int
-SSIHandler(int iIndex, char *pcInsert, int iInsertLen)
-{
-    unsigned long ulVal;
-    int tempa = 0;
-
-    //
-    // Which SSI tag have we been passed?
-    //
-    switch(iIndex)
-    {
-        case SSI_INDEX_JSON1:
-            io_get_ledstate(pcInsert, iInsertLen);
-            break;
-
-        case SSI_INDEX_JSON2:
-            io_get_pwmstate(pcInsert, iInsertLen);
-            break;
-
-        case SSI_INDEX_JSON3:
-            ulVal = io_get_pwmfreq();
-            usnprintf(pcInsert, iInsertLen, "%d", ulVal);
-            break;
-
-        case SSI_INDEX_JSON4:
-            ulVal = io_get_pwmdutycycle();
-            usnprintf(pcInsert, iInsertLen, "%d", ulVal);
-            break;
-
-         case SSI_INDEX_JSON5:
-         	usnprintf(pcInsert, iInsertLen,
-         	"%s\njson=%s\n%s",
-         	JAVASCRIPT_HEADER,
-         	//"[{\"name\":\"ch01\",\"active\":1,\"io\":0,\"num\":2},{\"name\":\"Ch2!\",\"active\":1,\"io\":0,\"num\":2},{\"name\":\"1\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"1\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"2\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"2\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"3\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"3\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"4\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"4\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"5\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"5\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"6\",\"active\":0,\"io\":0,\"num\":0},{\"name\":\"7\",\"active\":0,\"io\":0,\"num\":0}]",
-         	"[{\"name\":\"ch01\",\"active\":1,\"io\":0,\"num\":2},{\"name\":\"Ch2!\",\"active\":1,\"io\":0,\"num\":2}]",
-         	JAVASCRIPT_FOOTER);
-         	break;
-
-        default:
-            usnprintf(pcInsert, iInsertLen, "??");
-            break;
-    }
-
-    //
-    // Tell the server how many characters our insert string contains.
-    //
-
-    tempa = strlen(pcInsert);
-    return(tempa);
-}   
-    //END CODE INSERTED BY MATT
-
 //*****************************************************************************
 //
 // Display an lwIP type IP Address.
@@ -400,11 +96,10 @@ DisplayIPAddress(unsigned long ipaddr, unsigned long ulCol,
     //
     usprintf(pucBuf, "%d.%d.%d.%d", pucTemp[0], pucTemp[1], pucTemp[2],
              pucTemp[3]);
-
     //
     // Display the string.
     //
-    RIT128x96x4StringDraw(pucBuf, ulCol, ulRow, 15);
+    //RIT128x96x4StringDraw(pucBuf, ulCol, ulRow, 15);
 }
 
 //*****************************************************************************
@@ -430,24 +125,24 @@ lwIPHostTimerHandler(void)
         //
         // Update status bar on the display.
         //
-        RIT128x96x4Enable(1000000);
+        //RIT128x96x4Enable(1000000);
         if(iColumn < 12)
         {
-            RIT128x96x4StringDraw("< ", 0, 24, 15);
-            RIT128x96x4StringDraw("*",iColumn, 24, 7);
+            //RIT128x96x4StringDraw("< ", 0, 24, 15);
+            //RIT128x96x4StringDraw("*",iColumn, 24, 7);
         }
         else
         {
-            RIT128x96x4StringDraw(" *",iColumn - 6, 24, 7);
+            //RIT128x96x4StringDraw(" *",iColumn - 6, 24, 7);
         }
 
         iColumn++;
         if(iColumn > 114)
         {
             iColumn = 6;
-            RIT128x96x4StringDraw(" >", 114, 24, 15);
+            //RIT128x96x4StringDraw(" >", 114, 24, 15);
         }
-        RIT128x96x4Disable();
+        //RIT128x96x4Disable();
     }
 
     //
@@ -456,18 +151,18 @@ lwIPHostTimerHandler(void)
     else if(ulLastIPAddress != ulIPAddress)
     {
         ulLastIPAddress = ulIPAddress;
-        RIT128x96x4Enable(1000000);
-        RIT128x96x4StringDraw("                       ", 0, 16, 15);
-        RIT128x96x4StringDraw("                       ", 0, 24, 15);
-        RIT128x96x4StringDraw("IP:   ", 0, 16, 15);
-        RIT128x96x4StringDraw("MASK: ", 0, 24, 15);
-        RIT128x96x4StringDraw("GW:   ", 0, 32, 15);
+        //RIT128x96x4Enable(1000000);
+        //RIT128x96x4StringDraw("                       ", 0, 16, 15);
+        //RIT128x96x4StringDraw("                       ", 0, 24, 15);
+        //RIT128x96x4StringDraw("IP:   ", 0, 16, 15);
+        //RIT128x96x4StringDraw("MASK: ", 0, 24, 15);
+        //RIT128x96x4StringDraw("GW:   ", 0, 32, 15);
         DisplayIPAddress(ulIPAddress, 36, 16);
-        ulIPAddress = lwIPLocalNetMaskGet();
-        DisplayIPAddress(ulIPAddress, 36, 24);
-        ulIPAddress = lwIPLocalGWAddrGet();
-        DisplayIPAddress(ulIPAddress, 36, 32);
-        RIT128x96x4Disable();
+        //ulIPAddress = lwIPLocalNetMaskGet();
+        //DisplayIPAddress(ulIPAddress, 36, 24);
+        //ulIPAddress = lwIPLocalGWAddrGet();
+        //DisplayIPAddress(ulIPAddress, 36, 32);
+        //RIT128x96x4Disable();
     }
 }
 
@@ -476,25 +171,14 @@ lwIPHostTimerHandler(void)
 // The interrupt handler for the SysTick interrupt.
 //
 //*****************************************************************************
-void
-SysTickIntHandler(void)
-{
-    //
+void SysTickIntHandler(void) {
     // Call the lwIP timer handler.
-    //
     lwIPTimer(SYSTICKMS);
 
-    //
     // Run the file system tick handler.
-    //
     fs_tick(SYSTICKMS);
 }
 
-//*****************************************************************************
-//
-// This example demonstrates the use of the Ethernet Controller.
-//
-//*****************************************************************************
 
 void channels_init() {
 	uint8_t i=0;
@@ -564,73 +248,259 @@ void menu_init(Display *one, Display *two, Display *three, Display *four, Displa
 	display_set_text(four,HOME_TEXT,16);
 }
 
-int
-main(void)
-{
+void port_b_isr(void) {
+	IntDisable(INT_GPIOC);
+	turn_encoder_right();
+	delaymycode(20);
+	GPIOPinIntClear(INT_GPIOC,GPIO_PIN_5);
+	IntEnable(INT_GPIOC);
+}
+
+void qei_isr(void) {
+	IntDisable(INT_QEI0);
+	long ulDirection = QEIDirectionGet(QEI0_BASE);
+	unsigned long ulPosition = QEIPositionGet(QEI0_BASE);
+	unsigned long ulVelocity = QEIVelocityGet(QEI0_BASE);	
+//	printf("status.  int_dir: %d, int_index: %d   ", (int)(QEIIntStatus(QEI0_BASE, false) & QEI_INTDIR), (int)(QEIIntStatus(QEI0_BASE, QEI_INTINDEX)& QEI_INTINDEX));
+//	printf("direction: %d, position: %d, velocity: %d\n", ulDirection, ulPosition, ulVelocity);
+	if ( ulPosition > 12 ) {
+		turn_encoder_right();
+	} else if (ulPosition < 12) turn_encoder_left();
+	
+	QEIPositionSet(QEI0_BASE, 12);
+	QEIIntClear(QEI0_BASE, QEI_INTTIMER);
+	IntEnable(INT_QEI0);
+}
+
+
+int8_t gpio_init(void) {
+	// initialize physical switches + rotary encoder
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+	GPIODirModeSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_DIR_MODE_IN);
+	GPIOPadConfigSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
+
+	IntPrioritySet(INT_GPIOC, 0x00);
+	GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_LOW_LEVEL);
+	GPIOPinIntEnable(GPIO_PORTC_BASE, GPIO_PIN_5);
+	IntEnable(INT_GPIOC);
+	
+	
+	
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_QEI0);         
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
+	GPIOPinConfigure(GPIO_PC6_PHB0);
+    GPIOPinConfigure(GPIO_PC4_PHA0);
+    GPIOPinTypeQEI(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_4); 
+         
+	//
+	// Configure the quadrature encoder to capture edges on both signals and
+	// maintain an absolute position by resetting on index pulses. Using a
+	// 1000 line encoder at four edges per line, there are 4000 pulses per	
+	// revolution; therefore set the maximum position to 3999 since the count
+	// is zero based.
+	//
+	QEIIntClear(QEI0_BASE, QEI_INTERROR | QEI_INTDIR | QEI_INTTIMER | QEI_INTINDEX);
+	QEIDisable(QEI0_BASE);
+	QEIConfigure(QEI0_BASE, (QEI_CONFIG_CAPTURE_A_B | QEI_CONFIG_NO_RESET |
+	QEI_CONFIG_QUADRATURE | QEI_CONFIG_NO_SWAP), 24);
+	
+	QEIVelocityConfigure(QEI0_BASE, QEI_VELDIV_1, 20000000);  
+    
+    //Enable the Velocity capture Module
+   	QEIVelocityEnable(QEI0_BASE);
+
+	IntEnable(INT_QEI0);
+    QEIIntEnable(QEI0_BASE, QEI_INTTIMER);
+	// Enable the quadrature encoder.
+	QEIEnable(QEI0_BASE);
+	
+	return 1;	
+}
+
+void UART_isr(void) {
+	unsigned long int_status = UARTIntStatus(UART0_BASE, 1);
+	char returned_value[17];
+	unsigned long tempchar;
+	int8_t uart_counter = 0;
+	
+	UARTIntClear(UART0_BASE, UART_INT_RX);
+	
+	if( int_status & UART_INT_RX ) {
+		UARTCharPut(UART0_BASE, 'R');
+		while ( UARTCharsAvail(UART0_BASE) == 1) {
+    		if ( (tempchar = UARTCharGetNonBlocking(UART0_BASE)) > 0 ) {
+    			returned_value[uart_counter] = (char) tempchar;
+    			uart_counter++;
+    		}
+		}
+		
+		if(returned_value[0] == 0xFF) Api_rx_all(&(returned_value[1]));
+		 
+	} else if( int_status & UART_INT_TX ) {
+		UARTCharPut(UART0_BASE, 'T');
+	}
+
+	while((UARTIntStatus(UART0_BASE, 0) & UART_INT_RX) ) {
+		delaymycode(1);	
+	}		
+}
+
+void TIMER0_isr(void) {
+    //look to see if there are any objects in the circular ring buffer
+	//if so, transmit them if there is room in the buffer
+	//if not, exit the isr  
+	
+	//get the global ApiHandler
+    struct ApiHandlerVars *handler = global_api_handler(0);
+	CircularBuffer* cBuf = &(handler->tx_buffer);
+	
+	//if buffer has elements then transmit them and add them to transmitted stack
+	while( !cbIsEmpty(cBuf) ) {
+		ElemType elem;
+		cbRead(cBuf, &elem);
+		Api_tx_all(elem.value);
+		
+		//can do this loose cast because super is always the first 
+		//element of ApiRead/ApiWrite/ApiAck/ApiNot
+		//ApiCmd* api_cmd = (ApiCmd*) elem.value;
+		
+		//Api_tx_stack_append(&(handler->head), elem.value, api_cmd->cmd_count);
+	}
+    
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    
+    while((TimerIntStatus(TIMER0_BASE, 1) & TIMER_TIMA_TIMEOUT) ) {
+		delaymycode(1);	
+	}	
+}
+
+
+void uart_tx_timer_init(void) {
+ 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+	TimerConfigure(TIMER0_BASE, TIMER_CFG_32_BIT_PER);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/20);
+
+	IntEnable(INT_TIMER0A);
+	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+	TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+
+
+void notificationCallback(void* api_ptr) {
+	ApiNot* notif = (ApiNot*)api_ptr;
+	
+	printf("notified!  message = %d", notif->message);	
+}
+
+int main(void) {
 
     unsigned long ulUser0, ulUser1;
     unsigned char pucMACArray[8];
 
-	if(REVISION_IS_A2)
-    {
-        SysCtlLDOSet(SYSCTL_LDO_2_75V);
-    }
+	if(REVISION_IS_A2) SysCtlLDOSet(SYSCTL_LDO_2_75V);
 
-    //
     // Set the clocking to run directly from the PLL at 50MHz.
-    //
     SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_8MHZ);
 
-    //
-    // Set the clocking to run directly from the crystal.
-    //
-    //SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN |
-    //               SYSCTL_XTAL_8MHZ);
+    //initialize the handler variables
+    struct ApiHandlerVars handler_vars;
+    struct ApiCmdNode* txed_stack = malloc(sizeof(struct ApiCmdNode));
+    struct ApiCmdNode* tx_buffer = malloc(sizeof(struct ApiCmdNode));
+    
+    
+    Api_register_notif_callback(&handler_vars, notificationCallback);
+    
+    Api_init_handler_vars(&handler_vars, txed_stack);
+    txed_stack->next = NULL;
+    txed_stack->cmd_count = 0;
+    
+    cbInit(&(handler_vars.tx_buffer), 20);
+    
+    
+    global_api_handler(&handler_vars);
+    handler_vars.cmd_counter = 17;
+    
+    IntMasterEnable();
+    UART_init();
+	uart_tx_timer_init();
 
-    //
-    // Initialize the UART for debug output.
-    //
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-    UARTStdioInit(0);
+    ApiRead  r1;//, r2;
+    //ApiWrite w1, w2;
+    //ApiAck   a1, a2;
+    ApiNot n1;//, n2;
 
-    //
-    // Initialize the OLED display.
-    //
-    RIT128x96x4Init(1000000);
-    RIT128x96x4StringDraw("Ethernet  w/  lwIP", 12, 0, 15);
+    //TEST API READ CONSTRUCTOR AND RE-CONSTRUCTOR
+    ApiRead_ctor(&r1, 1, OUTPUT, COMP, THRESHOLD);
+    ApiNot_ctor(&n1, 2, OUTPUT, COMP, 1);
+    
+    //let's transmit the read_1 api command
+    //have it call callbackFunction upon reception of the corresponding value
+    
+    ElemType elem;
+    elem.value = &(r1.super);
+    cbWrite(&(handler_vars.tx_buffer), &elem);
+    Api_set_callback(&(r1.super), callbackFunction);
+    
+    elem.value = &(n1.super);
+    cbWrite(&(handler_vars.tx_buffer), &elem);
+    
+//    while(!cbIsEmpty(&(handler_vars.tx_buffer))) {
+//    	cbRead(&(handler_vars.tx_buffer), &elem);
+//   	Api_tx_all(object.value, &handler_vars);
+//    }
+    
+    
 
-    //
+//    long returned_value[100];
+//    uint8_t uart_counter = 0;
+//    long tempchar;
+    
+//    while(1) {
+//    	uart_counter = 0;
+//    	while( uart_counter < 8) {
+//    		if ( UARTCharsAvail(UART0_BASE) == 1) {
+//	    		if ( (tempchar = UARTCharGetNonBlocking(UART0_BASE)) > 0 ) {
+//	    			returned_value[uart_counter] = (char) tempchar;
+//	    			uart_counter++;
+//	    		} else delaymycode(1);
+//    		}
+//	    }
+//	    
+//	    if (uart_counter > 0) {
+//		    while( (uart_counter > 0) ) {
+//		    	//printf("writing:  %c\n", (char)returned_value[uart_counter-1]);
+//		    	while( !UARTSpaceAvail(UART0_BASE) ) {}
+//		    		UARTCharPutNonBlocking(UART0_BASE, (char)returned_value[uart_counter-1]);
+//		    	uart_counter--;
+//		    }
+//	    }
+//	delaymycode(1);
+//    }
+
     // Enable and Reset the Ethernet Controller.
-    //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ETH);
     SysCtlPeripheralReset(SYSCTL_PERIPH_ETH);
 
-    //
     // Enable Port F for Ethernet LEDs.
     //  LED0        Bit 3   Output
     //  LED1        Bit 2   Output
-    //
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
     GPIOPinTypeEthernetLED(GPIO_PORTF_BASE, GPIO_PIN_2 | GPIO_PIN_3);
 
-    //
     // Configure SysTick for a periodic interrupt.
-    //
     SysTickPeriodSet(SysCtlClockGet() / SYSTICKHZ);
     SysTickEnable();
     SysTickIntEnable();
 
-    //
+	//configure the io (rotary encoder + buttons)
+	//gpio_init();
+
     // Enable processor interrupts.
-    //
     IntMasterEnable();
 
-    //
     // Initialize the file system.
-    //
-    RIT128x96x4Disable();
     fs_init();
 
     //
@@ -648,9 +518,9 @@ main(void)
         // We should never get here.  This is an error if the MAC address has
         // not been programmed into the device.  Exit the program.
         //
-        RIT128x96x4Enable(1000000);
-        RIT128x96x4StringDraw("MAC Address", 0, 16, 15);
-        RIT128x96x4StringDraw("Not Programmed!", 0, 24, 15);
+       // RIT128x96x4Enable(1000000);
+        //RIT128x96x4StringDraw("MAC Address", 0, 16, 15);
+        //RIT128x96x4StringDraw("Not Programmed!", 0, 24, 15);
         while(1)
         {
         }
@@ -668,87 +538,57 @@ main(void)
     pucMACArray[4] = ((ulUser1 >>  8) & 0xff);
     pucMACArray[5] = ((ulUser1 >> 16) & 0xff);
 
-    //
     // Initialze the lwIP library, using DHCP.
-    //
     lwIPInit(pucMACArray, 0, 0, 0, IPADDR_USE_DHCP);
 
-    //
     // Setup the device locator service.
-    //
     LocatorInit();
     LocatorMACAddrSet(pucMACArray);
-    LocatorAppTitleSet("EK-LM3S8962 enet_lwip");
+    LocatorAppTitleSet("AmpTraXX2");
 
-    //
-    // Indicate that DHCP has started.
-    //
-    RIT128x96x4Enable(1000000);
-    RIT128x96x4StringDraw("Waiting for IP", 0, 16, 15);
-    RIT128x96x4StringDraw("<                   > ", 0, 24, 15);
-    RIT128x96x4Disable();
-
-    //
     // Initialize a sample httpd server.
-    //
     httpd_init();
     
-    // ADDED BY MATT WEBB
-    
-    //
-    // Pass our tag information to the HTTP server.
-    //
-    http_set_ssi_handler(SSIHandler, g_pcConfigSSITags,
-                         NUM_CONFIG_SSI_TAGS);
-                         
-                         
-    // Pass our CGI handlers to the HTTP server.
-    //
-    http_set_cgi_handlers(g_psConfigCGIURIs, NUM_CONFIG_CGI_URIS);
-    //END ADD BY MATT WEBB
 
-    //
     // Set the interrupt priorities.  We set the SysTick interrupt to a higher
     // priority than the Ethernet interrupt to ensure that the file system
     // tick is processed if SysTick occurs while the Ethernet handler is being
     // processed.  This is very likely since all the TCP/IP and HTTP work is
     // done in the context of the Ethernet interrupt.
-    //
     IntPriorityGroupingSet(4);
     IntPrioritySet(INT_ETH, ETHERNET_INT_PRIORITY);
     IntPrioritySet(FAULT_SYSTICK, SYSTICK_INT_PRIORITY);
-
-        UARTprintf("enet_lwip\n");
         
-	io_init();
-    //
-    // Loop forever.  All the work is done in interrupt handlers.
-    //
-    
 	channels_init();
-    I2CInit();
+    
+ /*   I2CInit();
 	screen_on();
 	screen_clear();
 	
-	Display* one = global_get_display(0);
-	Display* two = global_get_display(1);
+	Display* one   = global_get_display(0);
+	Display* two   = global_get_display(1);
 	Display* three = global_get_display(2);
-	Display* four = global_get_display(3);
-	Display* five = global_get_display(4);	
+	Display* four  = global_get_display(3);
+	Display* five  = global_get_display(4);	
 	
 	global_current_display(two);
 	
-	menu_init(one,two,three,four,five);
+	menu_init(one,two,three,four,five);*/
     
-	screen_write_txt(&(two->characters[0][0]),strlen(two->characters[0]));
+	//screen_write_txt(&(two->characters[0][0]),strlen(two->characters[0]));
 	
-	delaymycode(30);
-	push_encoder_button();
-		
-	int testnumber = 3;
+	//delaymycode(30);
+	//push_encoder_button();
+	
+	int testnumber = 0;
 		
 	while(true){
 		switch(testnumber){
+			case 0: {
+				while(1) {
+					delaymycode(1);
+				}	
+			}
 			case 1: {
 		
 			delaymycode(30);
@@ -794,8 +634,16 @@ main(void)
 					turn_encoder_left();
 				}
 			}
+			
+			//autonomous mode
+			case 4: {
+				//delaymycode(30);
+				//turn_encoder_right();
+			
+				//delaymycode(30);
+				//push_encoder_button();
+				while(1) {}	
+			}
 		}
 	}
 }
-
-

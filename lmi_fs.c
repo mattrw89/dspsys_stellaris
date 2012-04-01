@@ -36,8 +36,6 @@
 #include "httpserver_raw/fsdata.h"
 #include "fatfs/src/ff.h"
 #include "fatfs/src/diskio.h"
-#include "drivers/rit128x96x4.h"
-#include "io.h"
 
 #include "lib/dspsys_lib_channel/channel.h"
 #include "global.h"
@@ -126,15 +124,15 @@ fs_init(void)
     //
     // Flag and display which file system we are using.
     //
-    RIT128x96x4Enable(1000000);
-    RIT128x96x4StringDraw("Web Server Using", 18, 48, 15);
+    //RIT128x96x4Enable(1000000);
+    //RIT128x96x4StringDraw("Web Server Using", 18, 48, 15);
     if(fresult == FR_OK)
     {
         //
         // Indicate and display that we are using the SD file system.
         //
         g_bFatFsEnabled = true;
-        RIT128x96x4StringDraw("SD File System", 24, 56, 15);
+        //RIT128x96x4StringDraw("SD File System", 24, 56, 15);
     }
     else
     {
@@ -142,9 +140,9 @@ fs_init(void)
         // Indicate and display that we are using the internal file system.
         //
         g_bFatFsEnabled = false;
-        RIT128x96x4StringDraw("Internal File System", 6, 56, 15);
+        //RIT128x96x4StringDraw("Internal File System", 6, 56, 15);
     }
-    RIT128x96x4Disable();
+    //RIT128x96x4Disable();
 }
 
 //*****************************************************************************
@@ -221,32 +219,6 @@ fs_open(char *name)
         //
         return(ptFile);
 	}
-    
-    if(strncmp(name, "/c/bye", 19) == 0)
-    {
-    	RIT128x96x4Enable(1000000);
-    RIT128x96x4StringDraw("Bye! Cya L8r!", 18, 80, 15);
-    RIT128x96x4Disable();
-        //
-        // Toggle the STATUS LED
-        //
-        
-        io_set_led(!io_is_led_on());
-
-        //
-        // Setup the file structure to return whatever.
-        //
-        ptFile->data = NULL;
-        ptFile->len = 0;
-        ptFile->index = 0;
-        ptFile->pextension = NULL;
-
-        //
-        // Return the file system pointer.
-        //
-        return(ptFile);
-    }
-    // END ADD BY MATT
 
     //
     // Check to see if the Fat File System has been enabled.

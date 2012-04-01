@@ -22,6 +22,7 @@
 //
 //*****************************************************************************
 
+#include "lib/dspsys_lib_txrxspi/ApiHandler.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -54,6 +55,10 @@ extern unsigned long __STACK_TOP;
 //*****************************************************************************
 extern void lwIPEthernetIntHandler(void);
 extern void SysTickIntHandler(void);
+extern void port_b_isr(void);
+extern void qei_isr(void);
+extern void UART_isr(void);
+extern void TIMER0_isr(void);
 
 //*****************************************************************************
 //
@@ -84,10 +89,10 @@ void (* const g_pfnVectors[])(void) =
     SysTickIntHandler,                      // The SysTick handler
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
-    IntDefaultHandler,                      // GPIO Port C
+    port_b_isr,                      		// GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                      // UART0 Rx and Tx
+    UART_isr,                      			// UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
@@ -95,13 +100,13 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // PWM Generator 0
     IntDefaultHandler,                      // PWM Generator 1
     IntDefaultHandler,                      // PWM Generator 2
-    IntDefaultHandler,                      // Quadrature Encoder 0
+    qei_isr,                      			// Quadrature Encoder 0
     IntDefaultHandler,                      // ADC Sequence 0
     IntDefaultHandler,                      // ADC Sequence 1
     IntDefaultHandler,                      // ADC Sequence 2
     IntDefaultHandler,                      // ADC Sequence 3
     IntDefaultHandler,                      // Watchdog timer
-    IntDefaultHandler,                      // Timer 0 subtimer A
+    TIMER0_isr,                      // Timer 0 subtimer A
     IntDefaultHandler,                      // Timer 0 subtimer B
     IntDefaultHandler,                      // Timer 1 subtimer A
     IntDefaultHandler,                      // Timer 1 subtimer B

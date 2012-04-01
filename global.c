@@ -12,11 +12,6 @@
 Channel* get_channel_from_memory(Io_enum io, uint8_t channel_number) {
 	static Channel input_channels[NUM_INPUT_CHANNELS];
 	static Channel output_channels[NUM_OUTPUT_CHANNELS];
-	
-	//printf("size of channel %d bytes\n", sizeof(Channel));
-	//printf("inputs ch1: 0x%X , ch2: 0x%X\n, ch14: 0x%X", &input_channels[0], &input_channels[1], &input_channels[13]);
-	//printf("outputs ch1: 0x%X , ch2: 0x%X\n", &output_channels[0], &output_channels[1]);
-	//printf("difference in ch1 and ch2: %d bytes\n", (&output_channels[1] - &output_channels[0]));
 
 	//verify that the channel number is within bounds and that a valid IO enum value is given
 	if( io == INPUT ) {
@@ -56,6 +51,20 @@ Display* global_get_display(uint8_t num ) {
 		default: 
 			return NULL;
 	}
+}
+
+struct ApiHandlerVars* global_api_handler(struct ApiHandlerVars* vars) {
+	static struct ApiHandlerVars* handler;
+
+	if( (vars != NULL) || (vars != 0) ) {
+		handler = vars;
+	}
+	return handler;
+}
+
+void callbackFunction(void* api_ptr, float b) {
+	ApiRead* a = (ApiRead*) api_ptr;
+	printf("in callback: b = %lf, cmd_count:%d\n\n", b, (a->super).cmd_count);
 }
 
 #endif /*GLOBAL_C_*/
