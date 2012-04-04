@@ -67,4 +67,126 @@ void callbackFunction(void* api_ptr, float b) {
 	printf("in callback: b = %lf, cmd_count:%d\n\n", b, (a->super).cmd_count);
 }
 
+//---------------------------------------------------------------------------------
+
+Encoder_State* global_get_encoder(void) {
+	static Encoder_State state;
+	return &state;	
+}
+
+//-----------------------------------------------------------------------------------
+
+
+Address* global_get_address(void){
+	static Address addr;
+	return &addr;
+}
+
+//-----------------------------------------------------------------------------------
+
+Volume* global_get_volume(void) {
+	static Volume vol;
+	return &vol;
+}
+
+
+
+
+//------------------------------------------------------------------------------------------------------
+
+void fix_address(Address *addr, int i) {
+	switch(i) {
+		case 0:{
+			//fixes the IP address
+			check_address(addr->ip);
+			break;
+		}
+		case 1: {
+			//fixes the SUBNET MASK
+			check_address(addr->subnet);
+			break;
+		}
+		case 2: {
+			//fixes he GATEWAY
+			check_address(addr->gateway);
+			break;
+		}
+	}
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void actual_change_address() {
+	unsigned long ip, subnet, gateway;
+	Address* addr = global_get_address();
+
+	convert_address_to_long(addr->ip, &ip);
+	convert_address_to_long(addr->subnet, &subnet);
+	convert_address_to_long(addr->gateway, &gateway);
+	
+	// IPADDR_USE_DHCP use for mode
+	lwIPNetworkConfigChange(ip, subnet, gateway, IPADDR_USE_STATIC);
+
+
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void convert_address_to_long(char *addr, unsigned long *laddr){
+	char point = '.';
+	char zero = '0';
+	char temp[16];
+	char* s;
+	int i, j, length;
+	uint8_t oct[4];
+	unsigned long t;
+	
+	memcpy( temp, addr, strlen(addr) );
+	length = strlen(temp);
+	
+	for( i = 0; i <12; i++) {
+		if( temp[i] != zero ) {
+			for( j = i; j<12; j++) {
+				if( temp[i] == point ) {
+					j = 15;
+				}
+				else i++;
+			}
+		}
+		else {
+			length--;
+			memcpy( &(temp[i]), &(temp[i+1]), strlen(&(temp[i+1])) );
+			strncpy( &(temp[length]), 0, 1);
+			i--;
+		}
+	}
+	
+
+	j = 0;
+	length = 0;
+	for( i = 0; i<16; i++) {
+		if( (temp[i] == point) || (temp[i] == 208) || (temp[i] == 0) ) {
+			if( j < 4){
+				strncpy( &(temp[i]), '\0', 1);
+				s = &(temp[length]);
+				oct[j] = (uint8_t)strtol(s,NULL,10);
+				length = (i+1);
+				j++;
+			}
+		}
+	}
+	uint8_t temp2 = 0;
+	temp2 = oct[0];
+	oct[0] = oct[3];
+	oct[3] = temp2;
+	temp2 = oct[1];
+	oct[1] = oct[2];
+	oct[2] = temp2;
+	
+	unsigned long* templong;
+	templong = (unsigned long*)oct;
+	t = *templong;
+	*laddr = t;
+}
+
 #endif /*GLOBAL_C_*/

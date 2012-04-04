@@ -55,8 +55,7 @@ extern unsigned long __STACK_TOP;
 //*****************************************************************************
 extern void lwIPEthernetIntHandler(void);
 extern void SysTickIntHandler(void);
-extern void port_b_isr(void);
-extern void qei_isr(void);
+extern void quad_encoder(void);
 extern void UART_isr(void);
 extern void TIMER0_isr(void);
 
@@ -89,7 +88,7 @@ void (* const g_pfnVectors[])(void) =
     SysTickIntHandler,                      // The SysTick handler
     IntDefaultHandler,                      // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
-    port_b_isr,                      		// GPIO Port C
+    quad_encoder,                      		// GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
     UART_isr,                      			// UART0 Rx and Tx
@@ -100,7 +99,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // PWM Generator 0
     IntDefaultHandler,                      // PWM Generator 1
     IntDefaultHandler,                      // PWM Generator 2
-    qei_isr,                      			// Quadrature Encoder 0
+    IntDefaultHandler,                      // Quadrature Encoder 0
     IntDefaultHandler,                      // ADC Sequence 0
     IntDefaultHandler,                      // ADC Sequence 1
     IntDefaultHandler,                      // ADC Sequence 2

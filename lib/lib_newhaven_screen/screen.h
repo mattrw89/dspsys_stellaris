@@ -17,6 +17,10 @@ typedef enum {
 	SCRN_ON = 0x41,
 	SCRN_OFF = 0x42,
 	SCRN_SET_CURSOR = 0x45,		//requires one byte after
+	SCRN_UNDER_ON = 0x47,
+	SCRN_UNDER_OFF = 0x48,
+	SCRN_BLINK_ON = 0x4B,
+	SCRN_BLINK_OFF = 0x4C,
 	SCRN_BAUD_RATE = 0x71,
 	SCRN_ADDRESS = 0x72,
 	SCRN_VERSION = 0x70,
@@ -43,7 +47,8 @@ typedef enum {
 	SEC_1 = 0x00,  //1st line 1st column
 	SEC_2 = 0x08,  //1st line middle
 	SEC_3 = 0x40,  //2nd line 1st column
-	SEC_4 = 0x48   //2nd line middle
+	SEC_4 = 0x48,  //2nd line middle
+	LINE2END_M1 = 0x4E //2nd line one space from last
 } Cursor_enum;
 
 
@@ -53,6 +58,12 @@ void screen_write_txt(char *ptr_txt, uint8_t length);
 void screen_write_txt_line_2(char *ptr_txt, uint8_t length);
 void screen_write_txt_sec_2(char *ptr_txt, uint8_t length);
 void screen_set_cursor(Cursor_enum loc);
+void screen_underline_on();
+void screen_underline_off();
+void screen_move_cursor_right();
+void screen_move_cursor_left();
+void screen_blink_cursor_on();
+void screen_blink_cursor_off();
 void screen_clear();
 
 

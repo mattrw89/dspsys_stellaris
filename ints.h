@@ -14,4 +14,12 @@ void push_encoder_button();
 
 void push_back_button();
 
+void turn_encoder_right_change();
+
+void turn_encoder_left_change();
+
+void push_encoder_button_change();
+
+void push_back_button_change();
+
 #endif /*INTS_H_*/

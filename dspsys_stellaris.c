@@ -33,6 +33,7 @@
 #include "lib/lib_codec_cs42448/codec.h"
 #include "lib/circbuff/circbuff.h"
 #include "lib/uart/uart.h"
+#include "lib/qei/quad.h"
 
 //define the UART port that I'm using 
 #define UART_PORT UART0_BASE
@@ -107,62 +108,103 @@ DisplayIPAddress(unsigned long ipaddr, unsigned long ulCol,
 // Required by lwIP library to support any host-related timer functions.
 //
 //*****************************************************************************
+
+void
+ConvertAddress2Char(unsigned long ipaddr, char* pucBuf )
+{
+    unsigned char *pucTemp = (unsigned char *)&ipaddr;
+
+    //
+    // Convert the IP Address into a string.
+    //
+    usprintf(pucBuf, "%d.%d.%d.%d", pucTemp[0], pucTemp[1], pucTemp[2],
+             pucTemp[3]);
+
+}
+
+void address_set(unsigned long addr,int type) {
+	char char1[16];
+	Address* address = global_get_address();
+	switch(type) {
+		case 0: {
+			ConvertAddress2Char(addr,char1);
+			strncpy(address->ip,char1,sizeof(char1));
+			break;
+		}
+		case 1: {
+			ConvertAddress2Char(addr,char1);
+			strncpy(address->subnet,char1,sizeof(char1));
+			break;
+		}
+		case 2: {
+			ConvertAddress2Char(addr,char1);
+			strncpy(address->gateway,char1,sizeof(char1));
+			break;
+		}
+	}
+	fix_address(address,type);
+}
+
+//-----------------------------------------------------------------------------------------
 void
 lwIPHostTimerHandler(void)
 {
     static unsigned long ulLastIPAddress = 0;
+    static unsigned long ulLastSMAddress = 0;
+    static unsigned long ulLastGWAddress = 0;
     unsigned long ulIPAddress;
+    unsigned long ulSMAddress;
+    unsigned long ulGWAddress;
 
     ulIPAddress = lwIPLocalIPAddrGet();
+    ulSMAddress = lwIPLocalNetMaskGet();
+    ulGWAddress = lwIPLocalGWAddrGet();
+    
 
     //
     // If IP Address has not yet been assigned, update the display accordingly
     //
-    if(ulIPAddress == 0)
+    if(ulIPAddress == 0 || ulSMAddress == 0 || ulGWAddress == 0)
     {
-        static int iColumn = 6;
-
-        //
-        // Update status bar on the display.
-        //
-        //RIT128x96x4Enable(1000000);
-        if(iColumn < 12)
-        {
-            //RIT128x96x4StringDraw("< ", 0, 24, 15);
-            //RIT128x96x4StringDraw("*",iColumn, 24, 7);
-        }
-        else
-        {
-            //RIT128x96x4StringDraw(" *",iColumn - 6, 24, 7);
-        }
-
-        iColumn++;
-        if(iColumn > 114)
-        {
-            iColumn = 6;
-            //RIT128x96x4StringDraw(" >", 114, 24, 15);
-        }
-        //RIT128x96x4Disable();
+////        static int iColumn = 6;
+////
+////        
+////         Update status bar on the display.
+////        
+////        RIT128x96x4Enable(1000000);
+////        if(iColumn < 12)
+////        {
+////            RIT128x96x4StringDraw("< ", 0, 24, 15);
+////            RIT128x96x4StringDraw("*",iColumn, 24, 7);
+////        }
+////        else
+////        {
+////            RIT128x96x4StringDraw(" *",iColumn - 6, 24, 7);
+////        }
+////
+////        iColumn++;
+////        if(iColumn > 114)
+////        {
+////            iColumn = 6;
+////            RIT128x96x4StringDraw(" >", 114, 24, 15);
+////        }
+////        RIT128x96x4Disable();
     }
 
     //
     // Check if IP address has changed, and display if it has.
     //
-    else if(ulLastIPAddress != ulIPAddress)
+    else if( (ulLastIPAddress != ulIPAddress) || (ulLastSMAddress != ulSMAddress) || (ulLastGWAddress != ulGWAddress) )
     {
         ulLastIPAddress = ulIPAddress;
-        //RIT128x96x4Enable(1000000);
-        //RIT128x96x4StringDraw("                       ", 0, 16, 15);
-        //RIT128x96x4StringDraw("                       ", 0, 24, 15);
-        //RIT128x96x4StringDraw("IP:   ", 0, 16, 15);
-        //RIT128x96x4StringDraw("MASK: ", 0, 24, 15);
-        //RIT128x96x4StringDraw("GW:   ", 0, 32, 15);
-        DisplayIPAddress(ulIPAddress, 36, 16);
-        //ulIPAddress = lwIPLocalNetMaskGet();
-        //DisplayIPAddress(ulIPAddress, 36, 24);
-        //ulIPAddress = lwIPLocalGWAddrGet();
-        //DisplayIPAddress(ulIPAddress, 36, 32);
-        //RIT128x96x4Disable();
+        address_set(ulIPAddress, 0);
+        
+        ulLastSMAddress = ulSMAddress;
+        address_set(ulSMAddress, 1);
+        
+        ulLastGWAddress = ulGWAddress;
+        address_set(ulGWAddress, 2);
+		
     }
 }
 
@@ -240,7 +282,8 @@ void menu_init(Display *one, Display *two, Display *three, Display *four, Displa
 	four->func_back = &s1_back;
 	five->func_back = &s1_back;
 	
-	display_set_text(five, CHANNEL_DISPLAY_TEXT, 16);
+	display_set_text(five, IP_TEXT, 16);
+	display_ctor(five, IP_ADDRESS, NULL, NULL, NULL, NULL, NULL);
 	
 	display_set_text(two, HOME_TEXT, 16);
 	display_set_text(three, HOME_TEXT, 16);
@@ -248,71 +291,17 @@ void menu_init(Display *one, Display *two, Display *three, Display *four, Displa
 	display_set_text(four,HOME_TEXT,16);
 }
 
-void port_b_isr(void) {
-	IntDisable(INT_GPIOC);
-	turn_encoder_right();
-	delaymycode(20);
-	GPIOPinIntClear(INT_GPIOC,GPIO_PIN_5);
-	IntEnable(INT_GPIOC);
-}
-
-void qei_isr(void) {
-	IntDisable(INT_QEI0);
-	long ulDirection = QEIDirectionGet(QEI0_BASE);
-	unsigned long ulPosition = QEIPositionGet(QEI0_BASE);
-	unsigned long ulVelocity = QEIVelocityGet(QEI0_BASE);	
-//	printf("status.  int_dir: %d, int_index: %d   ", (int)(QEIIntStatus(QEI0_BASE, false) & QEI_INTDIR), (int)(QEIIntStatus(QEI0_BASE, QEI_INTINDEX)& QEI_INTINDEX));
-//	printf("direction: %d, position: %d, velocity: %d\n", ulDirection, ulPosition, ulVelocity);
-	if ( ulPosition > 12 ) {
-		turn_encoder_right();
-	} else if (ulPosition < 12) turn_encoder_left();
-	
-	QEIPositionSet(QEI0_BASE, 12);
-	QEIIntClear(QEI0_BASE, QEI_INTTIMER);
-	IntEnable(INT_QEI0);
-}
-
 
 int8_t gpio_init(void) {
-	// initialize physical switches + rotary encoder
+	
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-	GPIODirModeSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_DIR_MODE_IN);
-	GPIOPadConfigSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPU);
-
-	IntPrioritySet(INT_GPIOC, 0x00);
-	GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_5, GPIO_LOW_LEVEL);
-	GPIOPinIntEnable(GPIO_PORTC_BASE, GPIO_PIN_5);
+	GPIODirModeSet(GPIO_PORTC_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_6 | GPIO_PIN_7, GPIO_DIR_MODE_IN);
+	GPIOPadConfigSet(GPIO_PORTC_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_6 | GPIO_PIN_7, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+	GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_5 | GPIO_PIN_7 | GPIO_PIN_6 | GPIO_PIN_4, GPIO_LOW_LEVEL);
+	GPIOPinIntEnable(GPIO_PORTC_BASE, GPIO_PIN_5| GPIO_PIN_4 | GPIO_PIN_6 | GPIO_PIN_7);
 	IntEnable(INT_GPIOC);
-	
-	
-	
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_QEI0);         
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
-	GPIOPinConfigure(GPIO_PC6_PHB0);
-    GPIOPinConfigure(GPIO_PC4_PHA0);
-    GPIOPinTypeQEI(GPIO_PORTC_BASE, GPIO_PIN_6 | GPIO_PIN_4); 
-         
-	//
-	// Configure the quadrature encoder to capture edges on both signals and
-	// maintain an absolute position by resetting on index pulses. Using a
-	// 1000 line encoder at four edges per line, there are 4000 pulses per	
-	// revolution; therefore set the maximum position to 3999 since the count
-	// is zero based.
-	//
-	QEIIntClear(QEI0_BASE, QEI_INTERROR | QEI_INTDIR | QEI_INTTIMER | QEI_INTINDEX);
-	QEIDisable(QEI0_BASE);
-	QEIConfigure(QEI0_BASE, (QEI_CONFIG_CAPTURE_A_B | QEI_CONFIG_NO_RESET |
-	QEI_CONFIG_QUADRATURE | QEI_CONFIG_NO_SWAP), 24);
-	
-	QEIVelocityConfigure(QEI0_BASE, QEI_VELDIV_1, 20000000);  
-    
-    //Enable the Velocity capture Module
-   	QEIVelocityEnable(QEI0_BASE);
-
-	IntEnable(INT_QEI0);
-    QEIIntEnable(QEI0_BASE, QEI_INTTIMER);
-	// Enable the quadrature encoder.
-	QEIEnable(QEI0_BASE);
+	IntMasterEnable();
+	GPIOPinIntClear(GPIO_PORTC_BASE, GPIO_PIN_5| GPIO_PIN_4 | GPIO_PIN_6 | GPIO_PIN_7);
 	
 	return 1;	
 }
@@ -392,6 +381,30 @@ void notificationCallback(void* api_ptr) {
 	
 	printf("notified!  message = %d", notif->message);	
 }
+
+void encoder_init(void) {
+	Encoder_State* encoder = global_get_encoder();
+	encoder->encoderA_last = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_4);	
+	encoder->encoderB_last = GPIOPinRead(GPIO_PORTC_BASE, GPIO_PIN_6);
+}
+
+void screen_init(void) {
+	screen_on();
+	screen_clear();
+	screen_underline_off();
+	screen_blink_cursor_off();
+}
+
+
+void volume_init(void) {
+	char char1[7] = "-63";
+	Volume* vol = global_get_volume();
+	strncpy(vol->left_level,char1,sizeof(char1));
+	strncpy(vol->right_level,char1,sizeof(char1));
+	vol->l_level = -63;
+	vol->r_level = -63;
+}
+
 
 int main(void) {
 
@@ -540,7 +553,7 @@ int main(void) {
 
     // Initialze the lwIP library, using DHCP.
     lwIPInit(pucMACArray, 0, 0, 0, IPADDR_USE_DHCP);
-
+	//netif_set_addr();
     // Setup the device locator service.
     LocatorInit();
     LocatorMACAddrSet(pucMACArray);
@@ -560,6 +573,22 @@ int main(void) {
     IntPrioritySet(FAULT_SYSTICK, SYSTICK_INT_PRIORITY);
         
 	channels_init();
+	I2CInit();
+	screen_init();
+	volume_init();
+	gpio_init();
+	encoder_init();
+	
+	Display* one = global_get_display(0);
+	Display* two = global_get_display(1);
+	Display* three = global_get_display(2);
+	Display* four = global_get_display(3);
+	Display* five = global_get_display(4);	
+	
+	menu_init(one,two,three,four,five);
+	global_current_display(two);
+	screen_write_txt(&(two->characters[0][0]),strlen(two->characters[0]));
+	
     
  /*   I2CInit();
 	screen_on();
@@ -586,7 +615,6 @@ int main(void) {
 		switch(testnumber){
 			case 0: {
 				while(1) {
-					delaymycode(1);
 				}	
 			}
 			case 1: {
@@ -613,7 +641,6 @@ int main(void) {
 				delaymycode(30);
 				turn_encoder_right();
 				}
-			break;
 			}	
 			
 			case 3: {

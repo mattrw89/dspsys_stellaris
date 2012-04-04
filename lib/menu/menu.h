@@ -6,24 +6,27 @@
 #include <string.h>
 #include "../lib_newhaven_screen/screen.h"
 
-#define CHANNEL_DISPLAY_TEXT "Channel Display" 
-#define CHANNEL_SELECT_TEXT "Channel Select"
-#define VOLUME_TEXT "Volume"
-#define AMP_TYPE_TEXT	"Amp Type"
+
 #define HOME_TEXT	"SD Group 13"
+#define IP_TEXT "IP Address" 
+#define SUBNETMASK_TEXT "Subnet Mask"
+#define GATEWAY_TEXT "Gateway"
+#define VOLUME_TEXT "Volume"
 
 typedef enum {
-	CHANNEL_DISPLAY = 0x10,
-	CHANNEL_SELECT = 0x11,
-	CHANNEL_VOLUME = 0x12,
-	AMP_TYPE = 0x13,
-	CHANNEL_DISPLAY_2 = 0x20,
-	CHANNEL_SELECT_2 = 0x21,
-	CHANNEL_VOLUME_2 = 0x22,
-	AMP_TYPE_2 = 0x23,
-	CHANNEL_SELECT_3 = 0x31,
-	HOME = 0x00
-	
+	HOME = 0x00,
+	IP_ADDRESS = 0x10,
+	SUBNETMASK = 0x11,
+	GATEWAY = 0x12,
+	VOLUME = 0x13,
+	IP_ADDRESS_CHANGE = 0x20,
+	SUBNETMASK_CHANGE = 0x21,
+	GATEWAY_CHANGE = 0x22,
+	VOLUME_CHANGE = 0x23,
+	IP_ADDRESS_CHANGE_2 = 0x30,
+	SUBNETMASK_CHANGE_2 = 0x31,
+	GATEWAY_CHANGE_2 = 0x32,
+	VOLUME_CHANGE_2 = 0x33
 } Menu_enum;
 
 typedef struct Display {
@@ -33,11 +36,11 @@ typedef struct Display {
 	struct Display *select;
 	struct Display *back;
 	uint16_t i;
-	char characters[2][17];
 	void (*func_left)(struct Display*, Menu_enum, uint16_t);
 	void (*func_right)(struct Display*,Menu_enum, uint16_t);
 	void (*func_select)(struct Display*,Menu_enum, uint16_t);
 	void (*func_back)(struct Display*,Menu_enum, uint16_t);
+	char characters[2][17];
 	
 }Display;
 
@@ -58,6 +61,24 @@ void display_ctor(Display* disp, Menu_enum menu_type, Display *left, Display *ri
 void display_set_text(Display* disp, char* chars, uint8_t length);
 
 void display_set_text_line_2(Display* disp, char* chars, uint8_t length);
+
+//void
+//SetIPAddress(unsigned long ipaddr, Display* disp);
+void ChangeAddress(Display *disp);
+
+void change_volume(Display *disp, int direction);
+
+void right_change(Display *disp);
+
+void left_change(Display *disp);
+
+void select_change(Display *disp);
+
+void back_change(Display *disp);
+
+void shift_address(char* addr, int start, int length);
+
+void check_address(char* addr);
 
 void delaymycode(uint16_t delaytime);
 #endif /*MENU_H_*/
